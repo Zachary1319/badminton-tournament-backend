@@ -26,7 +26,8 @@ exports.rankPlayers = function(scores) {
     .map(entry => entry[0]);
 };
 
-exports.generateNextRoundPairings = function(rankings, previousRounds, scores) {
+exports.generateNextRoundPairings = function(rankings, results, scores) {
+  const previousRounds = this.createPreviousRounds(results);
   let pairings = [];
   let paired = new Set();
 
@@ -47,22 +48,25 @@ exports.generateNextRoundPairings = function(rankings, previousRounds, scores) {
     }
   }
 
+  if (pairings.length !== rankings.length / 2) {
+    const error = new Error('Pairing Error');
+    error.type = 'pairing_failure';
+    throw error;
+  }
+
   return pairings;
 };
 
 exports.createPreviousRounds = function(results) {
   let previousRounds = {};
 
-  // 遍历每一轮的比赛结果
   for (const round in results) {
     results[round].forEach(match => {
       const { player1, player2 } = match;
 
-      // 为每位选手初始化对战记录
       if (!previousRounds[player1]) previousRounds[player1] = new Set();
       if (!previousRounds[player2]) previousRounds[player2] = new Set();
 
-      // 记录对战过的选手
       previousRounds[player1].add(player2);
       previousRounds[player2].add(player1);
     });
