@@ -20,7 +20,9 @@ Execute `npm start` to start the server.
 
 ## API Endpoints
 
-- `POST /submit-results`: Accepts match results and returns updated rankings and pairings.
+- `POST /matches/results`: Accepts match results and stores them for the current session. Returns a unique match ID for reference.
+- `GET /matches/rankings/:matchId`: Returns player rankings for a specific match session, identified by `matchId`.
+- `GET /matches/pairings/:matchId`: Generates and returns pairings for the next round based on the match results associated with the provided `matchId`.
 
 ## Development
 
