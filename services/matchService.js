@@ -30,31 +30,31 @@ exports.generateNextRoundPairings = function(rankings, results, scores) {
   let pairings = [];
   let paired = new Set();
 
-  rankings.forEach(player => {
-    if (paired.has(player)) return;
+  for (let i = 0; i < rankings.length; i++) {
+    if (paired.has(rankings[i])) continue;
 
-    const potentialPair = rankings.find(potentialPair =>
-      isEligibleForPairing(player, potentialPair, paired, previousRounds, scores));
+    for (let j = i + 1; j < rankings.length; j++) {
+      if (paired.has(rankings[j])) continue;
 
-    if (potentialPair) {
-      pairings.push([player, potentialPair]);
-      paired.add(player);
-      paired.add(potentialPair);
+      if (haveFacedEachOther(rankings[i], rankings[j], previousRounds)) continue;
+
+      if (isSecondaryScoreDifferenceAcceptable(rankings[i], rankings[j], scores)) {
+        pairings.push([rankings[i], rankings[j]]);
+        paired.add(rankings[i]);
+        paired.add(rankings[j]);
+        break;
+      }
     }
-  });
+  }
 
   if (pairings.length !== rankings.length / 2) {
-    throw new Error('Unable to generate valid pairings for all players');
+    const error = new Error('Pairing Error');
+    error.type = 'pairing_failure';
+    throw error;
   }
 
   return pairings;
 };
-
-function isEligibleForPairing(player, potentialPair, paired, previousRounds, scores) {
-  return !paired.has(potentialPair) &&
-    !haveFacedEachOther(player, potentialPair, previousRounds) &&
-    isSecondaryScoreDifferenceAcceptable(player, potentialPair, scores);
-}
 
 exports.createPreviousRounds = function(results) {
   let previousRounds = {};
