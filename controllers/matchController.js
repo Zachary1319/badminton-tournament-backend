@@ -6,10 +6,8 @@ let matchResultsStorage = {};
 exports.submitMatchResults = async (req, res, next) => {
   try {
     const results = req.body;
-    console.log(results);
     const matchId = Date.now().toString();
     matchResultsStorage[matchId] = results;
-    console.log(matchResultsStorage);
 
     responseUtils.successResponse(res, 'Match results submitted successfully', { matchId });
   } catch (error) {
