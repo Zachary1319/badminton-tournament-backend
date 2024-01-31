@@ -1,7 +1,8 @@
-const matchService = require('../services/matchService');
+const MatchService = require('../services/matchService');
 const responseUtils = require('../utils/responseHandler');
 
 let matchResultsStorage = {};
+const matchService = new MatchService();
 
 exports.submitMatchResults = async (req, res, next) => {
   try {
@@ -25,9 +26,8 @@ exports.generateRankings = async (req, res, next) => {
       return responseUtils.errorResponse(res, 'Match results not found', 404);
     }
 
-    const scores = matchService.processMatchResults(results);
-    const rankings = matchService.rankPlayers(scores);
-
+    const rankings = matchService.processMatchResults(results);
+    const scores = matchService.getScores();
     responseUtils.successResponse(res, 'Rankings generated successfully', { scores, rankings });
   } catch (error) {
     next(error);
@@ -43,9 +43,8 @@ exports.generatePairings = async (req, res, next) => {
       return responseUtils.errorResponse(res, 'Match results not found', 404);
     }
 
-    const scores = matchService.processMatchResults(results);
-    const rankings = matchService.rankPlayers(scores);
-    const pairings = matchService.generateNextRoundPairings(rankings, results, scores);
+    matchService.processMatchResults(results);
+    const pairings = matchService.generateNextRoundPairings();
 
     responseUtils.successResponse(res, 'Pairings generated successfully', { pairings });
   } catch (error) {

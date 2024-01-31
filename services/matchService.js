@@ -1,87 +1,59 @@
-exports.processMatchResults = function(results) {
-  let scores = {};
+const Player = require('../models/player');
+const Match = require('../models/Match');
+const Tournament = require('../models/Tournament');
+const TournamentRound = require('../models/tournamentRound');
 
-  for (const round in results) {
-    results[round].forEach(match => {
-      const { player1, player2, score1, score2 } = match;
-      const scoreDiff = parseInt(score1) - parseInt(score2);
+class MatchService {
+  constructor() {
+    this.tournament = new Tournament([]);
+  }
 
-      if (!scores[player1]) scores[player1] = { primary: 0, secondary: 0 };
-      if (!scores[player2]) scores[player2] = { primary: 0, secondary: 0 };
+  processMatchResults(results) {
+    const players = this.createPlayers(results);
+    this.tournament = new Tournament(players);
+    const rounds = this.createRounds(results, players);
+    rounds.forEach(round => this.tournament.addRound(round));
+    return this.tournament.rankPlayers();
+  }
 
-      scores[player1].primary += score1 > score2 ? 1 : 0;
-      scores[player1].secondary += scoreDiff;
-      scores[player2].primary += score2 > score1 ? 1 : 0;
-      scores[player2].secondary -= scoreDiff;
+  generateNextRoundPairings() {
+    return this.tournament.generateNextRoundPairings();
+  }
+
+  createPlayers(results) {
+    const playerNames = new Set();
+    Object.values(results).forEach(round => {
+      round.forEach(match => {
+        playerNames.add(match.player1);
+        playerNames.add(match.player2);
+      });
+    });
+
+    return Array.from(playerNames).map(name => new Player(name));
+  }
+
+  createRounds(results, players) {
+    return Object.values(results).map(roundMatches => {
+      const matches = roundMatches.map(match => {
+        const player1 = players.find(player => player.name === match.player1);
+        const player2 = players.find(player => player.name === match.player2);
+        return new Match(player1, player2, match.score1, match.score2);
+      });
+      return new TournamentRound(matches);
     });
   }
 
-  return scores;
-};
-
-exports.rankPlayers = function(scores) {
-  return Object.entries(scores)
-    .sort((a, b) => b[1].primary - a[1].primary || b[1].secondary - a[1].secondary)
-    .map(entry => entry[0]);
-};
-
-exports.generateNextRoundPairings = function(rankings, results, scores) {
-  const previousRounds = this.createPreviousRounds(results);
-  let pairings = [];
-  let paired = new Set();
-
-  for (let i = 0; i < rankings.length; i++) {
-    if (paired.has(rankings[i])) continue;
-
-    for (let j = i + 1; j < rankings.length; j++) {
-      if (paired.has(rankings[j])) continue;
-
-      if (haveFacedEachOther(rankings[i], rankings[j], previousRounds)) continue;
-
-      if (isSecondaryScoreDifferenceAcceptable(rankings[i], rankings[j], scores)) {
-        pairings.push([rankings[i], rankings[j]]);
-        paired.add(rankings[i]);
-        paired.add(rankings[j]);
-        break;
-      }
-    }
-  }
-
-  if (pairings.length !== rankings.length / 2) {
-    const error = new Error('Pairing Error');
-    error.type = 'pairing_failure';
-    throw error;
-  }
-
-  return pairings;
-};
-
-exports.createPreviousRounds = function(results) {
-  let previousRounds = {};
-
-  for (const round in results) {
-    results[round].forEach(match => {
-      const { player1, player2 } = match;
-
-      if (!previousRounds[player1]) previousRounds[player1] = new Set();
-      if (!previousRounds[player2]) previousRounds[player2] = new Set();
-
-      previousRounds[player1].add(player2);
-      previousRounds[player2].add(player1);
+  getScores() {
+    const scores = {};
+    this.tournament.players.forEach(player => {
+      scores[player.name] = player.getScore();
     });
+    return scores;
   }
-
-  return previousRounds;
-};
-
-function haveFacedEachOther(player1, player2, previousRounds) {
-  return previousRounds[player1] && previousRounds[player1].has(player2);
 }
 
-function isSecondaryScoreDifferenceAcceptable(player1, player2, scores) {
-  const scoreDiff = Math.abs(scores[player1].secondary - scores[player2].secondary);
-  return scoreDiff <= 10;
-}
+module.exports = MatchService;
+
 
 
 
