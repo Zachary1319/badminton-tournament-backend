@@ -1,3 +1,4 @@
+// In-memory storage for match results, mimicking a simple database
 let matchResultsStorage = {};
 
 const matchResultsRepository = {

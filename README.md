@@ -23,6 +23,7 @@ Execute `npm start` to start the server.
 - `POST /matches/results`: Accepts match results and stores them for the current session. Returns a unique match ID for reference.
 - `GET /matches/rankings/:matchId`: Returns player rankings for a specific match session, identified by `matchId`.
 - `GET /matches/pairings/:matchId`: Generates and returns pairings for the next round based on the match results associated with the provided `matchId`.
+- `POST /matches/:matchId/rounds`: Accepts results for the next round of matches and stores them for the current session.
 
 ## Development
 
