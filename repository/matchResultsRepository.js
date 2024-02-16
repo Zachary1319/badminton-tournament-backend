@@ -2,22 +2,22 @@
 let matchResultsStorage = {};
 
 const matchResultsRepository = {
-  saveResults(matchId, results) {
-    matchResultsStorage[matchId] = results;
+  saveResults(tournamentId, results) {
+    matchResultsStorage[tournamentId] = results;
   },
 
-  getResults(matchId) {
-    return matchResultsStorage[matchId];
+  getResults(tournamentId) {
+    return matchResultsStorage[tournamentId];
   },
 
-  updateResults(matchId, newRoundResults) {
-    if (matchResultsStorage[matchId]) {
-      const existingRounds = matchResultsStorage[matchId];
+  updateResults(tournamentId, newRoundResults) {
+    if (matchResultsStorage[tournamentId]) {
+      const existingRounds = matchResultsStorage[tournamentId];
       const roundNumbers = Object.keys(existingRounds);
       const lastRoundNumber = roundNumbers.length === 0 ? 0 : Math.max(...roundNumbers.map(round => parseInt(round.replace('round', ''))));
       const nextRoundNumber = 'round' + (lastRoundNumber + 1);
 
-      matchResultsStorage[matchId][nextRoundNumber] = newRoundResults;
+      matchResultsStorage[tournamentId][nextRoundNumber] = newRoundResults;
     }
   }
 

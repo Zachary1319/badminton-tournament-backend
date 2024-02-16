@@ -3,12 +3,12 @@ const responseUtils = require('../utils/responseHandler');
 
 const matchService = new MatchService();
 
-exports.submitMatchResults = async (req, res, next) => {
+exports.initializeTournament = async (req, res, next) => {
   try {
     const results = req.body;
-    const matchId = Date.now().toString();
-    matchService.storeMatchResults(matchId, results);
-    responseUtils.successResponse(res, 'Match results submitted successfully', { matchId });
+    const tournamentId = Date.now().toString();
+    matchService.storeMatchResults(tournamentId, results);
+    responseUtils.successResponse(res, 'Match results submitted successfully', { tournamentId });
   } catch (error) {
     next(error);
   }
@@ -17,46 +17,38 @@ exports.submitMatchResults = async (req, res, next) => {
 
 exports.generateRankings = async (req, res, next) => {
   try {
-    const matchId = req.params.matchId;
-
-    try {
-      matchService.initializeTournament(matchId);
-    } catch (error) {
-      return responseUtils.errorResponse(res, 'Match results not found', 404);
-    }
-
-    const scores = matchService.getScores();
-    const rankings = matchService.getRankings();
+    const tournamentId = req.params.tournamentId;
+    const scores = matchService.getScores(tournamentId);
+    const rankings = matchService.getRankings(tournamentId);
     responseUtils.successResponse(res, 'Rankings generated successfully', { scores, rankings });
   } catch (error) {
-    next(error);
+    responseUtils.errorResponse(res, 404, 'Match results not found');
   }
 };
 
 exports.generatePairings = async (req, res, next) => {
   try {
-    const matchId = req.params.matchId;
-    try {
-      matchService.initializeTournament(matchId);
-    } catch (error) {
-      return responseUtils.errorResponse(res, 'Match results not found', 404);
-    }
-    const pairings = matchService.generateNextRoundPairings();
-
+    const tournamentId = req.params.tournamentId;
+    const pairings = matchService.generateNextRoundPairings(tournamentId);
     responseUtils.successResponse(res, 'Pairings generated successfully', { pairings });
   } catch (error) {
-    next(error);
+    responseUtils.errorResponse(res, 404, 'Match results not found');
   }
 };
 
+
 exports.addRoundToTournament = async (req, res, next) => {
   try {
-    const matchId = req.params.matchId;
+    const tournamentId = req.params.tournamentId;
     const newRoundResults = req.body;
 
-    matchService.addNewRoundToTournament(matchId, newRoundResults);
+    try {
+      matchService.addNewRoundToTournament(tournamentId, newRoundResults);
+    } catch (error) {
+      return responseUtils.errorResponse(res, 404, error.message);
+    }
 
-    responseUtils.successResponse(res, 'Round added successfully', { matchId });
+    responseUtils.successResponse(res, 'Round added successfully', { tournamentId });
   } catch (error) {
     responseUtils.errorResponse(res, 404, error.message);
   }

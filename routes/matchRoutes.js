@@ -3,13 +3,13 @@ const matchController = require('../controllers/matchController');
 
 const router = express.Router();
 
-router.post('/matches/results', matchController.submitMatchResults);
+router.post('/tournaments', matchController.initializeTournament);
 
-router.post('/matches/:matchId/round', matchController.addRoundToTournament);
+router.post('/tournaments/:tournamentId/rounds', matchController.addRoundToTournament);
 
-router.get('/matches/rankings/:matchId', matchController.generateRankings);
+router.get('/tournaments/:tournamentId/rankings', matchController.generateRankings);
 
-router.get('/matches/pairings/:matchId', matchController.generatePairings);
+router.get('/tournaments/:tournamentId/pairings', matchController.generatePairings);
 
 module.exports = router;
 

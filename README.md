@@ -20,10 +20,19 @@ Execute `npm start` to start the server.
 
 ## API Endpoints
 
-- `POST /matches/results`: Accepts match results and stores them for the current session. Returns a unique match ID for reference.
-- `GET /matches/rankings/:matchId`: Returns player rankings for a specific match session, identified by `matchId`.
-- `GET /matches/pairings/:matchId`: Generates and returns pairings for the next round based on the match results associated with the provided `matchId`.
-- `POST /matches/:matchId/rounds`: Accepts results for the next round of matches and stores them for the current session.
+### Tournament Initialization and Management
+
+- `POST /tournaments`: Initializes a new tournament with the initial match results. Returns a unique tournament ID for reference.
+
+### Match Results Submission
+
+- `POST /tournaments/:tournamentId/rounds`: Accepts results for the next round of matches in the specified tournament, identified by `tournamentId`.
+
+### Rankings and Pairings
+
+- `GET /tournaments/:tournamentId/rankings`: Returns player rankings for a specific tournament, identified by `tournamentId`.
+
+- `GET /tournaments/:tournamentId/pairings`: Generates and returns pairings for the next round based on the match results associated with the provided `tournamentId`.
 
 ## Development
 

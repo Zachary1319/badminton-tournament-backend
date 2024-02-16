@@ -5,27 +5,19 @@ const TournamentRound = require('../models/tournamentRound');
 const matchResultsRepository = require('../repository/matchResultsRepository');
 
 class MatchService {
-  constructor() {
-    this.tournament = new Tournament([]);
-  }
 
-  initializeTournament(matchId) {
-    const results = matchResultsRepository.getResults(matchId);
+  initializeTournament(tournamentId) {
+    const results = matchResultsRepository.getResults(tournamentId);
     if (!results) {
       throw new Error('Match results not found');
     }
-
     const players = this.createPlayers(results);
-    this.tournament = new Tournament(players);
+    const tournament = new Tournament(players);
     Object.values(results).forEach(roundResults => {
       const round = this.createRound(roundResults, players);
-      this.tournament.addRound(round);
+      tournament.addRound(round);
     });
-  }
-
-  addMatchRound(results) {
-    const round = this.createRound(results, this.tournament.players);
-    this.tournament.addRound(round);
+    return tournament;
   }
 
   createRound(results, players) {
@@ -35,10 +27,6 @@ class MatchService {
       return new Match(player1, player2, match.score1, match.score2);
     });
     return new TournamentRound(matches);
-  }
-
-  generateNextRoundPairings() {
-    return this.tournament.generateNextRoundPairings();
   }
 
   createPlayers(results) {
@@ -53,29 +41,60 @@ class MatchService {
     return Array.from(playerNames).map(name => new Player(name));
   }
 
-  getScores() {
+  getScores(tournamentId) {
+    const tournament = this.initializeTournament(tournamentId);
     const scores = {};
-    this.tournament.players.forEach(player => {
-      scores[player.name] = player.getScore();
+    tournament.players.forEach(player => {
+      scores[player.name] = {
+        primaryPoints: player.primaryPoints,
+        secondaryPoints: player.secondaryPoints
+      };
     });
     return scores;
   }
 
-  getRankings() {
-    return this.tournament.rankPlayers();
+  getRankings(tournamentId) {
+    const tournament = this.initializeTournament(tournamentId);
+    const sortedPlayers = tournament.players.sort((a, b) => b.primaryPoints - a.primaryPoints || b.secondaryPoints - a.secondaryPoints);
+    return sortedPlayers.map(player => player.name);
   }
 
-  storeMatchResults(matchId, results) {
-    matchResultsRepository.saveResults(matchId, results);
+  generateNextRoundPairings(tournamentId) {
+    const tournament = this.initializeTournament(tournamentId);
+    const pairings = [];
+    const paired = new Set();
+
+    const sortedPlayers = tournament.players.sort((a, b) => b.primaryPoints - a.primaryPoints || b.secondaryPoints - a.secondaryPoints);
+
+    for (let i = 0; i < sortedPlayers.length; i++) {
+      const player1 = sortedPlayers[i];
+      for (let j = i + 1; j < sortedPlayers.length; j++) {
+        const player2 = sortedPlayers[j];
+        if (!paired.has(player1.name) && !paired.has(player2.name) && !player1.hasFaced(player2.name) && this.isScoreDifferenceAcceptable(player1, player2)) {
+          pairings.push([player1.name, player2.name]);
+          paired.add(player1.name);
+          paired.add(player2.name);
+        }
+      }
+    }
+    return pairings;
   }
 
-  addNewRoundToTournament(matchId, newRoundResults) {
-    const existingResults = matchResultsRepository.getResults(matchId);
+  storeMatchResults(tournamentId, results) {
+    matchResultsRepository.saveResults(tournamentId, results);
+  }
+
+  addNewRoundToTournament(tournamentId, newRoundResults) {
+    const existingResults = matchResultsRepository.getResults(tournamentId);
     if (!existingResults) {
       throw new Error('Tournament not found');
     }
-    matchResultsRepository.updateResults(matchId, newRoundResults);
-    this.addMatchRound(newRoundResults);
+    matchResultsRepository.updateResults(tournamentId, newRoundResults);
+  }
+
+  isScoreDifferenceAcceptable(player1, player2) {
+    const scoreDiff = Math.abs(player1.secondaryPoints - player2.secondaryPoints);
+    return scoreDiff <= 10;
   }
 }
 
