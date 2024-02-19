@@ -6,8 +6,7 @@ const matchResultsRepository = require('../repository/matchResultsRepository');
 
 class MatchService {
 
-  initializeTournament(tournamentId) {
-    const results = matchResultsRepository.getResults(tournamentId);
+  initializeTournament(tournamentId,results) {
     if (!results) {
       throw new Error('Match results not found');
     }
@@ -42,7 +41,8 @@ class MatchService {
   }
 
   getScores(tournamentId) {
-    const tournament = this.initializeTournament(tournamentId);
+    const tournament = matchResultsRepository.getTournament(tournamentId);
+    if (!tournament) throw new Error('Tournament not found');
     const scores = {};
     tournament.players.forEach(player => {
       scores[player.name] = {
@@ -54,13 +54,15 @@ class MatchService {
   }
 
   getRankings(tournamentId) {
-    const tournament = this.initializeTournament(tournamentId);
+    const tournament = matchResultsRepository.getTournament(tournamentId);
+    if (!tournament) throw new Error('Tournament not found');
     const sortedPlayers = tournament.players.sort((a, b) => b.primaryPoints - a.primaryPoints || b.secondaryPoints - a.secondaryPoints);
     return sortedPlayers.map(player => player.name);
   }
 
   generateNextRoundPairings(tournamentId) {
-    const tournament = this.initializeTournament(tournamentId);
+    const tournament = matchResultsRepository.getTournament(tournamentId);
+    if (!tournament) throw new Error('Tournament not found');
     const pairings = [];
     const paired = new Set();
 
@@ -81,15 +83,18 @@ class MatchService {
   }
 
   storeMatchResults(tournamentId, results) {
-    matchResultsRepository.saveResults(tournamentId, results);
+    const tournament = this.initializeTournament(tournamentId, results);
+    matchResultsRepository.saveTournament(tournamentId, tournament);
   }
 
   addNewRoundToTournament(tournamentId, newRoundResults) {
-    const existingResults = matchResultsRepository.getResults(tournamentId);
-    if (!existingResults) {
+    const tournament = matchResultsRepository.getTournament(tournamentId);
+    if (!tournament) {
       throw new Error('Tournament not found');
     }
-    matchResultsRepository.updateResults(tournamentId, newRoundResults);
+    const round = this.createRound(newRoundResults, tournament.players);
+    tournament.addRound(round);
+    matchResultsRepository.saveTournament(tournamentId, tournament);
   }
 
   isScoreDifferenceAcceptable(player1, player2) {

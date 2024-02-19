@@ -22,7 +22,9 @@ exports.generateRankings = async (req, res, next) => {
     const rankings = matchService.getRankings(tournamentId);
     responseUtils.successResponse(res, 'Rankings generated successfully', { scores, rankings });
   } catch (error) {
-    responseUtils.errorResponse(res, 404, 'Match results not found');
+    error.status = 404;
+    error.message = 'Unable to generate rankings for the tournament.';
+    responseUtils.errorResponse(error, req, res, next);
   }
 };
 
@@ -32,7 +34,8 @@ exports.generatePairings = async (req, res, next) => {
     const pairings = matchService.generateNextRoundPairings(tournamentId);
     responseUtils.successResponse(res, 'Pairings generated successfully', { pairings });
   } catch (error) {
-    responseUtils.errorResponse(res, 404, 'Match results not found');
+    error.status = 404;
+    responseUtils.errorResponse(error, req, res, next);
   }
 };
 
@@ -45,12 +48,14 @@ exports.addRoundToTournament = async (req, res, next) => {
     try {
       matchService.addNewRoundToTournament(tournamentId, newRoundResults);
     } catch (error) {
-      return responseUtils.errorResponse(res, 404, error.message);
+      error.status = 404;
+      responseUtils.errorResponse(error, req, res, next);
     }
 
     responseUtils.successResponse(res, 'Round added successfully', { tournamentId });
   } catch (error) {
-    responseUtils.errorResponse(res, 404, error.message);
+    error.status = 404;
+    responseUtils.errorResponse(error, req, res, next);
   }
 };
 
