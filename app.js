@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const matchRoutes = require('./routes/matchRoutes');
+const matchRoutes = require('./routes/tournamentRoutes');
 
 app.use(express.json());
 app.use(cors());

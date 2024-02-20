@@ -2,24 +2,24 @@ const Player = require('../models/player');
 const Match = require('../models/Match');
 const Tournament = require('../models/Tournament');
 const TournamentRound = require('../models/tournamentRound');
-const matchResultsRepository = require('../repository/matchResultsRepository');
+const matchResultsRepository = require('../repository/tournamentRepository');
 
-class MatchService {
+class TournamentService {
 
   initializeTournament(tournamentId,results) {
     if (!results) {
       throw new Error('Match results not found');
     }
-    const players = this.createPlayers(results);
+    const players = this.buildPlayersFromResults(results);
     const tournament = new Tournament(players);
     Object.values(results).forEach(roundResults => {
-      const round = this.createRound(roundResults, players);
+      const round = this.buildRoundFromResults(roundResults, players);
       tournament.addRound(round);
     });
     return tournament;
   }
 
-  createRound(results, players) {
+  buildRoundFromResults(results, players) {
     const matches = results.map(match => {
       const player1 = players.find(player => player.name === match.player1);
       const player2 = players.find(player => player.name === match.player2);
@@ -28,7 +28,7 @@ class MatchService {
     return new TournamentRound(matches);
   }
 
-  createPlayers(results) {
+  buildPlayersFromResults(results) {
     const playerNames = new Set();
     Object.values(results).forEach(round => {
       round.forEach(match => {
@@ -41,27 +41,24 @@ class MatchService {
   }
 
   getScores(tournamentId) {
-    const tournament = matchResultsRepository.getTournament(tournamentId);
+    const tournament = matchResultsRepository.getTournamentById(tournamentId);
     if (!tournament) throw new Error('Tournament not found');
-    const scores = {};
-    tournament.players.forEach(player => {
-      scores[player.name] = {
-        primaryPoints: player.primaryPoints,
-        secondaryPoints: player.secondaryPoints
-      };
-    });
-    return scores;
+
+    return tournament.players.reduce((scores, {name, primaryPoints, secondaryPoints}) => {
+      scores[name] = {primaryPoints, secondaryPoints};
+      return scores;
+    }, {});
   }
 
   getRankings(tournamentId) {
-    const tournament = matchResultsRepository.getTournament(tournamentId);
+    const tournament = matchResultsRepository.getTournamentById(tournamentId);
     if (!tournament) throw new Error('Tournament not found');
     const sortedPlayers = tournament.players.sort((a, b) => b.primaryPoints - a.primaryPoints || b.secondaryPoints - a.secondaryPoints);
     return sortedPlayers.map(player => player.name);
   }
 
   generateNextRoundPairings(tournamentId) {
-    const tournament = matchResultsRepository.getTournament(tournamentId);
+    const tournament = matchResultsRepository.getTournamentById(tournamentId);
     if (!tournament) throw new Error('Tournament not found');
     const pairings = [];
     const paired = new Set();
@@ -88,11 +85,11 @@ class MatchService {
   }
 
   addNewRoundToTournament(tournamentId, newRoundResults) {
-    const tournament = matchResultsRepository.getTournament(tournamentId);
+    const tournament = matchResultsRepository.getTournamentById(tournamentId);
     if (!tournament) {
       throw new Error('Tournament not found');
     }
-    const round = this.createRound(newRoundResults, tournament.players);
+    const round = this.buildRoundFromResults(newRoundResults, tournament.players);
     tournament.addRound(round);
     matchResultsRepository.saveTournament(tournamentId, tournament);
   }
@@ -103,7 +100,7 @@ class MatchService {
   }
 }
 
-module.exports = MatchService;
+module.exports = TournamentService;
 
 
 

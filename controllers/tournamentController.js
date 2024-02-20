@@ -1,4 +1,4 @@
-const MatchService = require('../services/matchService');
+const MatchService = require('../services/tournamentService');
 const responseUtils = require('../utils/responseHandler');
 
 const matchService = new MatchService();

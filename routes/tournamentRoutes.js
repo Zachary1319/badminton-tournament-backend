@@ -1,5 +1,5 @@
 const express = require('express');
-const matchController = require('../controllers/matchController');
+const matchController = require('../controllers/tournamentController');
 
 const router = express.Router();
 
